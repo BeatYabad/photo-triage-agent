@@ -14,6 +14,23 @@ class CoreTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 list(batches([],size))
 
+    def test_ordinary_photo_with_personal_record_is_not_uncertain(self):
+        evidence={'category':'ordinary_photo','observation':'Family seated at a restaurant table',
+                  'evidence_type':'personal_record'}
+        result=junk_result(evidence,[4032,3024])
+        self.assertEqual(result['status'],'analyzed')
+        self.assertFalse(result['candidate'])
+        self.assertEqual(result['holds'],[])
+        self.assertEqual(result['contextual_evidence'],evidence)
+
+    def test_ordinary_photo_with_junk_evidence_stays_uncertain(self):
+        for evidence_type in ('humorous_caption','captured_ui','transaction_details','uncertain'):
+            with self.subTest(evidence_type=evidence_type):
+                result=junk_result({'category':'ordinary_photo','observation':'Conflicting evidence',
+                                   'evidence_type':evidence_type},[20,20])
+                self.assertEqual(result['status'],'needs_review')
+                self.assertFalse(result['candidate'])
+
     def test_categories_and_uncertainty(self):
         for category, candidate in [('meme_or_cartoon',True),('receipt',True),('screenshot',True),
                                     ('ordinary_photo',False),('personal_document',False),('graphic',False)]:

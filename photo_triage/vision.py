@@ -103,7 +103,10 @@ def junk_result(evidence, dimensions, frames=1):
     uncertain = category == 'uncertain' or (category in expected and not candidate)
     if category == 'personal_document' and value['evidence_type'] != 'personal_record':
         uncertain = True
-    if category == 'ordinary_photo' and value['evidence_type'] != 'none':
+    # The model also uses personal_record for ordinary family photographs.
+    # Both labels describe retained non-junk content; preserve the raw evidence
+    # without turning this harmless label overlap into a review requirement.
+    if category == 'ordinary_photo' and value['evidence_type'] not in {'none', 'personal_record'}:
         uncertain = True
     return {'status': 'needs_review' if uncertain else 'analyzed',
             'candidate': candidate, 'category': category if candidate else None,

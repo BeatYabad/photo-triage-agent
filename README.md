@@ -1,5 +1,9 @@
 # Photo Triage Agent — Windows / PhotoTools fork
 
+Ordinary photos labeled with `personal_record` evidence remain non-junk and do
+not require uncertainty review. The original model evidence remains in the
+report. Conflicting junk evidence and explicitly uncertain results remain gaps.
+
 This fork adds a portable local analysis package and resumable batch integration
 
 for PhotoTools. It shares decoded-image checks without taking over gallery
