@@ -3,6 +3,7 @@ import cv2
 import structlog
 
 from ..utils.image import load_image_cv2
+from photo_triage.metrics import laplacian_variance
 from .base import AnalysisResult, BaseAnalyzer, Result
 
 logger = structlog.get_logger()
@@ -51,8 +52,7 @@ class BlurAnalyzer(BaseAnalyzer):
                 return Result.fail(f"Failed to load image: {image_path}")
 
             # Compute Laplacian and its variance
-            laplacian = cv2.Laplacian(img, cv2.CV_64F)
-            variance = float(laplacian.var())
+            variance = laplacian_variance(img)
 
             is_blurry = variance < self.threshold
 

@@ -32,3 +32,9 @@ htmlcov/
 # Logs
 *.log
 logs/
+
+# Build products; model weights and media are not committed.
+build/
+*.egg-info/
+*.gguf
+*.part

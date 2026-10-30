@@ -1,5 +1,6 @@
 """Folder analysis orchestrator for Photo Triage Agent."""
 import hashlib
+import os
 import time
 from collections.abc import AsyncIterator, Callable
 from pathlib import Path
@@ -74,7 +75,10 @@ class FolderOrchestrator:
             ModelProvider if models available, None otherwise.
         """
         if self._model_provider is None and not self._model_loaded:
-            if models_available():
+            if os.getenv('PHOTO_TRIAGE_ENDPOINT'):
+                from .classifiers.lfm_server_provider import LFMServerProvider
+                self._model_provider = LFMServerProvider(os.environ['PHOTO_TRIAGE_ENDPOINT'],os.getenv('PHOTO_TRIAGE_MODEL','local-vision'))
+            elif models_available():
                 logger.info("loading_lfm_model")
                 config = get_model_config()
                 self._model_provider = LFMCliProvider(

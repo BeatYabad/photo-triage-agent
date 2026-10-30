@@ -2,6 +2,7 @@
 from dataclasses import dataclass
 
 import imagehash
+from photo_triage.metrics import perceptual_hashes
 import structlog
 
 from ..utils.image import load_image
@@ -64,11 +65,8 @@ class PerceptualHasher(BaseAnalyzer):
         try:
             img = load_image(image_path)
 
-            # Compute all hash types
-            phash = str(imagehash.phash(img, hash_size=self.hash_size))
-            dhash = str(imagehash.dhash(img, hash_size=self.hash_size))
-            ahash = str(imagehash.average_hash(img, hash_size=self.hash_size))
-            whash = str(imagehash.whash(img, hash_size=self.hash_size))
+            hashes = perceptual_hashes(img, self.hash_size)
+            phash, dhash, ahash, whash = (hashes[k] for k in ('phash','dhash','ahash','whash'))
 
             logger.debug(
                 "hash_computation_complete",

@@ -1,3 +1,602 @@
+# Photo Triage Agent — Windows / PhotoTools fork
+
+
+
+This fork adds a portable local analysis package and resumable batch integration
+
+for PhotoTools. It shares decoded-image checks without taking over gallery
+
+moves, deletion decisions, inboxes, or cloud delivery.
+
+
+
+## Install the portable core
+
+
+
+```powershell
+
+python -m pip install .
+
+python -m unittest discover -s tests -v
+
+```
+
+
+
+The core works with a persistent local llama.cpp vision server. Images remain in
+
+memory and are sent only to loopback; inference never uploads to a remote API.
+
+
+
+```python
+
+from photo_triage.vision import VisionProvider, junk_result
+
+from photo_triage.batch import batches
+
+
+
+provider = VisionProvider(
+
+    "http://127.0.0.1:18765/v1/chat/completions",
+
+    model="Qwen3-VL-4B-Instruct-Q8_0",
+
+)
+
+# Each image is a decoded PIL image; keep the server running across batches.
+
+for batch in batches(images, limit=100):
+
+    for image in batch:
+
+        print(junk_result(provider.inspect(image), list(image.size)))
+
+```
+
+
+
+PhotoTools uses its existing **Qwen3-VL 4B** model through this fork. The upstream
+
+LFM model ran locally but missed the joke-sign test cases; Qwen passed all ten
+
+known missed-meme examples. LFM is still available through the default provider
+
+on port 18766 and the explicit checksum-pinned `scripts/install_windows_model.py`
+
+installer. The installer assumes the existing Windows PhotoTools llama.cpp
+
+runtime; it does not start cleanup.
+
+
+
+## Use resumable batches in PhotoTools
+
+
+
+```powershell
+
+python photos.py triage-batch --selection selection.json --output C:/PhotoTools/runs/triage-test --batch-size 100 --limit 500
+
+```
+
+
+
+Repeat with the same output directory to process the next new items. Successful
+
+results resume only after current content and rule/model verification. The limit
+
+counts new attempts; cached results do not consume it. This command is read-only
+
+and does not process review inboxes. Normal gallery and import inference also
+
+use bounded batches, while retaining duplicate-first and asset-group sequencing.
+
+
+
+See [the integration guide](docs/PHOTOTOOLS.md) for the full capability map,
+
+installation boundaries, model comparison, resume semantics, and validation
+
+limits. The companion adapter source is in `integrations/phototools/`.
+
+
+
+Run `python scripts/check_local_controls.py` only when the configured Qwen server
+
+is running to exercise four in-memory non-junk controls. This accesses no gallery.
+
+Core CI runs on Windows and Linux without downloading a model or retaining media.
+
+
+
+## Original macOS application
+
+
+
+The original app documentation follows. Its macOS UI/trash workflow is separate
+
+from the PhotoTools integration. To use a persistent server in that app, set
+
+`PHOTO_TRIAGE_ENDPOINT` and `PHOTO_TRIAGE_MODEL`; install the root package into the
+
+backend environment first. PhotoTools does not deploy or invoke its trash API.
+
+
+
+---
+
+
+
+# Photo Triage Agent
+
+
+
+Organize your photo library with AI. Locally. Privately.
+
+
+
+## Why I Built This
+
+
+
+I have thousands of photos scattered across my Macâ€”screenshots of receipts, random memes, blurry duplicates, and somewhere in there, actual memories I care about. Every few months I'd open my Photos app, feel overwhelmed, and close it again.
+
+
+
+Cloud-based photo organizers exist, but I wasn't comfortable uploading personal photos to analyze them. I wanted something that:
+
+
+
+- Runs entirely on my machine (no cloud APIs)
+
+- Actually understands what's in my photos (not just filename matching)
+
+- Helps me find duplicates and junk without manual sorting
+
+- Lets me search naturally ("find receipts from December")
+
+
+
+So I built this. It uses a local vision-language model to classify photos, detects duplicates with perceptual hashing, and provides a simple web UI to review and clean up.
+
+
+
+## What It Does
+
+
+
+**AI Classification** â€” Each photo is categorized into one of:
+
+
+
+| Category | Examples |
+
+|----------|----------|
+
+| People | Portraits, group photos, selfies |
+
+| Landscape | Nature, cityscapes, sunsets |
+
+| Food | Meals, recipes, restaurant photos |
+
+| Document | Receipts, bills, scanned papers |
+
+| Screenshot | Phone/computer screenshots |
+
+| Meme | Social media images, memes |
+
+| Animal | Pets, wildlife |
+
+| Object | Products, items, random objects |
+
+
+
+**Quality Analysis** â€” Fast detection (no AI needed) for:
+
+- **Blur detection** â€” Flag blurry photos you might want to delete
+
+- **Duplicate detection** â€” Find exact and near-duplicate photos using perceptual hashing
+
+- **Screenshot detection** â€” Identify screenshots by metadata and dimensions
+
+
+
+**Natural Language Search** â€” Ask "find sunset photos" or "show me receipts from last month"
+
+
+
+**Safe Cleanup** â€” Move to trash with full undo support
+
+
+
+All processing happens on your machine. Your photos never leave.
+
+
+
+## Quick Start
+
+
+
+**Requirements:** macOS 14+, Python 3.11+, 8GB RAM recommended
+
+
+
+```bash
+
+# Clone and install
+
+git clone https://github.com/chintan-projects/photo-triage-agent
+
+cd photo-triage-agent/backend
+
+uv sync
+
+
+
+# Download the AI model (~1.7GB, one-time)
+
+uv run ./scripts/download_model.sh
+
+
+
+# Start the server
+
+uv run ./scripts/run_backend.sh
+
+```
+
+
+
+Open [http://localhost:8000](http://localhost:8000) in your browser.
+
+
+
+## Accessing iCloud Photos Library
+
+
+
+To analyze your iCloud Photos library, macOS requires **Full Disk Access** permission:
+
+
+
+1. Open **System Settings â†’ Privacy & Security â†’ Full Disk Access**
+
+2. Click **+** and add **Terminal** (or iTerm/your terminal app)
+
+3. Restart Terminal and the server
+
+
+
+Then use this path:
+
+```
+
+~/Pictures/Photos Library.photoslibrary/originals/
+
+```
+
+
+
+**Alternative:** Export photos from Photos.app to a regular folder and analyze that instead.
+
+
+
+## Large Libraries (10K+ photos)
+
+
+
+For large photo libraries, use **batch processing** to analyze incrementally:
+
+
+
+1. Set a batch size (e.g., 500 photos) in the web UI
+
+2. Run analysis â€” it processes 500 new photos and stops
+
+3. Run again â€” it skips already-analyzed photos and processes the next 500
+
+4. Repeat until done
+
+
+
+Already-analyzed photos are tracked by file hash, so you can stop and resume anytime.
+
+
+
+```bash
+
+# Via API: analyze 500 photos at a time
+
+curl -X POST http://localhost:8000/analyze/folder \
+
+  -H "Content-Type: application/json" \
+
+  -d '{"folder_path": "~/Pictures", "limit": 500}'
+
+```
+
+
+
+## How It Works
+
+
+
+```mermaid
+
+flowchart LR
+
+    A[Photo Folder] --> B[Fast Analyzers]
+
+    B --> C{Blur Detection}
+
+    B --> D{Screenshot Detection}
+
+    B --> E{Perceptual Hash}
+
+
+
+    A --> F[LFM Vision Model]
+
+    F --> G[Category + Description]
+
+
+
+    C & D & E & G --> H[(SQLite DB)]
+
+    H --> I[Web Dashboard]
+
+    I --> J[Review & Cleanup]
+
+```
+
+
+
+**Analysis pipeline:**
+
+1. **Fast analyzers** run first: blur detection, screenshot detection, perceptual hash
+
+2. **LFM vision model** classifies each photo: category + natural language description
+
+3. Results stored in SQLite for instant browsing and search
+
+
+
+## Natural Language Search
+
+
+
+The search understands context, not just keywords:
+
+
+
+| Query | What it finds |
+
+|-------|---------------|
+
+| "sunset photos" | Landscape photos with sunset lighting |
+
+| "receipts from stores" | Documents and screenshots of receipts |
+
+| "blurry duplicates" | Photos that are both blurry AND have duplicates |
+
+| "people at the beach" | Photos with people in beach/ocean settings |
+
+| "food I cooked" | Food photos (filters out restaurant shots if described) |
+
+
+
+```mermaid
+
+flowchart TD
+
+    A[User Query] --> B[Keyword Pre-filter]
+
+    B --> C[LFM Reasoning]
+
+    C --> D[Results with explanations]
+
+    C -.-> |Timeout/Error| E[Keyword Fallback]
+
+    E --> D
+
+```
+
+
+
+## Performance
+
+
+
+Speed depends on your Mac's hardware (M1 vs M3, RAM, etc.). After running analysis, the results page shows your actual metrics:
+
+
+
+- **Avg inference time** per photo
+
+- **Photos per second** throughput
+
+- **Total processing time**
+
+
+
+**Quick mode** (skip AI classification) is significantly faster if you only need blur detection, duplicate finding, and screenshot identification.
+
+
+
+## API
+
+
+
+For scripting or building your own UI:
+
+
+
+```bash
+
+# Start analysis (with optional batch limit)
+
+curl -X POST http://localhost:8000/analyze/folder \
+
+  -H "Content-Type: application/json" \
+
+  -d '{"folder_path": "~/Pictures", "limit": 500}'
+
+
+
+# Check progress
+
+curl http://localhost:8000/analyze/status/{job_id}
+
+
+
+# Search
+
+curl -X POST http://localhost:8000/chat \
+
+  -H "Content-Type: application/json" \
+
+  -d '{"message": "find all screenshots"}'
+
+
+
+# List photos by category
+
+curl "http://localhost:8000/photos?category=document"
+
+
+
+# Get duplicates
+
+curl http://localhost:8000/duplicates
+
+```
+
+
+
+Full API reference in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
+
+
+## Project Structure
+
+
+
+```
+
+photo-triage-agent/
+
+â”œâ”€â”€ backend/
+
+â”‚   â”œâ”€â”€ src/
+
+â”‚   â”‚   â”œâ”€â”€ analyzers/      # Blur, screenshot, hash detection
+
+â”‚   â”‚   â”œâ”€â”€ classifiers/    # LFM model integration
+
+â”‚   â”‚   â”œâ”€â”€ services/       # Search, jobs, conversations
+
+â”‚   â”‚   â”œâ”€â”€ api/            # FastAPI routes
+
+â”‚   â”‚   â””â”€â”€ web/            # Dashboard templates
+
+â”‚   â”œâ”€â”€ tests/              # 77+ tests
+
+â”‚   â””â”€â”€ models/             # Downloaded AI models
+
+â”œâ”€â”€ docs/
+
+â”‚   â”œâ”€â”€ ARCHITECTURE.md     # Technical deep-dive
+
+â”‚   â””â”€â”€ IMPLEMENTATION_PLAN.md
+
+â””â”€â”€ scripts/                # Setup and run scripts
+
+```
+
+
+
+## Privacy
+
+
+
+- All processing happens locally on your Mac
+
+- No cloud APIs, no telemetry, no data collection
+
+- Photos never leave your machine
+
+- Database stored locally in `backend/data/`
+
+
+
+## Limitations & Roadmap
+
+
+
+**Current limitations:**
+
+- macOS only (Linux likely works but untested)
+
+- Single-threaded AI inference (one photo at a time)
+
+- No HEIC thumbnail support yet
+
+- Requires Full Disk Access for Photos Library
+
+
+
+**Planned improvements:**
+
+- Faster search with dedicated text model
+
+- Native Mac app with Photos.app integration
+
+- Auto-organize into folders by category
+
+- HEIC thumbnail generation
+
+
+
+## Development
+
+
+
+```bash
+
+# Run tests
+
+cd backend && uv run pytest tests/ -v
+
+
+
+# Code style
+
+uv run ruff check src/ && uv run ruff format src/
+
+```
+
+
+
+## License
+
+
+
+MIT License â€” do whatever you want with it.
+
+
+
+---
+
+
+
+Built because I was tired of my photo library being a mess.
+
+
+---
+
 # Photo Triage Agent
 
 Organize your photo library with AI. Locally. Privately.
