@@ -93,3 +93,5 @@ integration. See the [upstream documentation](https://github.com/chintan-project
 To use a persistent server in that app, install this root package in its backend
 environment and set `PHOTO_TRIAGE_ENDPOINT` and `PHOTO_TRIAGE_MODEL`.
 PhotoTools does not deploy or invoke its trash API.
+
+PhotoTools review routing accepts validated core category evidence for photos and sampled videos. Supported meme, screenshot, and receipt findings reach FOR_REVIEW without legacy detector labels. Incomplete or unsupported findings remain explicit gaps; this does not authorize permanent deletion.
