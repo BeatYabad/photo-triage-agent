@@ -12,5 +12,9 @@
   "ordered_photo_pass.py": "2d11e5f029cd8eeb63465957535a20cf8d51352ce0652ddaaa27b1fb665bc4f7",
   "reference_contact_sheets.py": "cf790b7cff2ad16fddcd19a88c1cb0165127681dcf3f9b84df6254943802aa53",
   "photos.py": "ee192633bd85d98a853f7152a650dbfa57f4cf77d561fafbd30e0c8b0da1a949",
-  "compare_selection.py": "51ecbebb7d7890f9edcd6318769a03e23edb4e6d15d70b37394f30c7da9b41a1"
+  "compare_selection.py": "51ecbebb7d7890f9edcd6318769a03e23edb4e6d15d70b37394f30c7da9b41a1",
+  "test_photo_pass.py": "19feb57372265de4c5ca09dc46af372ef0c801594ca3554d3585b5bad62be409",
+  "test_review_filter_order.py": "643ef31f602032af42ed0545d3ed383ccd47680f0c26925eb74ca992792164e2",
+  "test_video_filter_review.py": "f60a8d88fdded7c752be12d7f16c3a56a54b893aa6ac8a6f5279d42e088bb7fd",
+  "test_ordered_photo_pass.py": "e452e3a350826bee8347dfeb14575fa104a91d0b621c6386394e46a94b55c3f6"
 }
