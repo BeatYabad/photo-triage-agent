@@ -24,7 +24,7 @@ def before_run(config):
     """Apply family decisions before imports, detectors, or other inbox actions."""
     result=process(config)
     print(json.dumps({'restore_family':result}),flush=True)
-    if result['held']:
+    if any(not hold.get('nonblocking') for hold in result['held']):
         raise ValueError('RESTORE_FAMILY could not finish; see restore-family-report.json')
     return result
 
@@ -32,14 +32,14 @@ def before_run(config):
 def process(config):
     folder=Path(config.get('family_restore_folder',config['restore_folder'].parent/'RESTORE_FAMILY'))
     result={'restored':0,'enrolled_faces':0,'held':[],'enrollment_gaps':[]}
-    prior=family_faces.load(config)
-    result['enrollment_gaps']=[{'sha256':digest,'reason':'No usable face; add a clearer reference for these people'}
-        for digest,item in prior['items'].items() if item.get('status')=='no_usable_face']
+    result['restored_without_faces']=0
     if not folder.exists():return result
-    rows,issues=scan.inventory({'restore':folder},scan.PHOTOS)
+    from nsfw_analysis import VIDEOS
+    supported=scan.PHOTOS|VIDEOS
+    rows,issues=scan.inventory({'restore':folder},supported)
     result['held'].extend(issues)
-    unsupported=[p for p in folder.rglob('*') if p.is_file() and p.suffix.lower() not in scan.PHOTOS]
-    result['held'].extend({'path':str(p),'error':'RESTORE_FAMILY accepts photos; this file was left in place'} for p in unsupported)
+    unsupported=[p for p in folder.rglob('*') if p.is_file() and p.suffix.lower() not in supported]
+    result['held'].extend({'path':str(p),'error':'Unsupported media type; this file was left in place'} for p in unsupported)
     if not rows:return result
     from windows_process_check import ensure_digikam_closed
     from PIL import Image,ImageOps
@@ -53,7 +53,7 @@ def process(config):
                 source={**row,**queue.fresh(row['path'])};digest=source['sha256']
                 prior=bank['items'].get(digest)
                 if prior and prior['bytes']!=source['bytes']:raise ValueError('Family reference identity mismatch')
-                if prior and prior.get('faces'):
+                if prior and prior.get('status') in {'enrolled','no_usable_face'}:
                     faces=prior['faces']
                 else:
                     faces=encode_file(config,source['path'])
@@ -68,13 +68,18 @@ def process(config):
                 roots=reaudit_nsfw.recorded_roots(config,item,source)
                 restored=queue.restore_files(roots,config['review_state'],folder,None,
                     config['review_state'].parent/'review-actions.jsonl',inventory_rows=[source],eligible_hashes={digest},remember_keep=False)
-                result['restored']+=restored['restore_files_cleared'];result['held'].extend(restored['held'])
+                result['restored']+=restored['restore_files_cleared']
+                for hold in restored['held']:
+                    # The input and enrolled protection remain intact. An offline
+                    # original need not prevent processing other available media.
+                    if 'Nonresident placeholder' in hold.get('error',''):
+                        hold={**hold,'nonblocking':True,'reason':'Original is cloud-only; family input retained and junk protection enrolled'}
+                    result['held'].append(hold)
                 kept=queue.load_state(config['review_state'])['items'].get(digest,{})
                 bank['items'][digest]['restore_destinations']=restored.get('restored_destinations',{}).get(digest,kept.get('restore_destinations',[]))
                 if restored['restore_files_cleared']:bank['items'][digest]['restored_utc']=scan.utc()
                 write_json(family_faces.state_path(config),bank)
-                if not faces and not any(g['sha256']==digest for g in result['enrollment_gaps']):
-                    result['enrollment_gaps'].append({'sha256':digest,'reason':'Restored and protected from junk by exact bytes; no usable face for protecting other photos'})
+                if not faces:result['restored_without_faces']+=restored['restore_files_cleared']
             except (OSError,ValueError,KeyError,RuntimeError,subprocess.SubprocessError) as exc:
                 result['held'].append({'path':row['path'],'error':str(exc)})
     write_json(config['review_state'].parent/'restore-family-report.json',result)
@@ -88,12 +93,9 @@ def main():
     parser.add_argument('--model-folder',type=Path)
     args=parser.parse_args()
     if args.encode:
-        from PIL import Image,ImageOps
-        import pillow_heif
-        pillow_heif.register_heif_opener()
-        from photo_triage.faces import FaceEncoder
-        with Image.open(args.encode) as im:
-            faces=FaceEncoder(args.model_folder).encode(ImageOps.exif_transpose(im).convert('RGB'))
+        config=settings.load(args.config)
+        config['family_models']=args.model_folder
+        faces=family_faces.encode_media(config,args.encode)
         print(json.dumps(faces));return 0
     result=process(settings.load(args.config));print(json.dumps(result),flush=True)
     return 2 if result['held'] or result['enrollment_gaps'] else 0

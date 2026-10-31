@@ -60,7 +60,8 @@ class RestoreFamilyTests(unittest.TestCase):
         source,original,identity=self.input()
         with patch.object(restore_family,'encode_file',return_value=[]):
             result=restore_family.process(self.config)
-        self.assertEqual(result['restored'],1);self.assertEqual(len(result['enrollment_gaps']),1)
+        self.assertEqual(result['restored'],1);self.assertEqual(result['enrollment_gaps'],[])
+        self.assertEqual(result['restored_without_faces'],1)
         self.assertTrue(family_faces.inspect(self.config,Image.new('RGB',(10,10)),identity)['matched'])
 
     def test_inference_failure_preserves_input_and_does_not_enroll(self):
@@ -69,6 +70,20 @@ class RestoreFamilyTests(unittest.TestCase):
             result=restore_family.process(self.config)
         self.assertTrue(result['held']);self.assertTrue(source.exists());self.assertFalse(original.exists())
         self.assertFalse(family_faces.load(self.config)['items'])
+
+    def test_video_input_is_enrolled_and_restored(self):
+        source,original,identity=self.input()
+        video=source.with_suffix('.mp4');source.rename(video)
+        with patch.object(restore_family,'encode_file',return_value=[FACE]) as encode:
+            result=restore_family.process(self.config)
+        self.assertEqual(result['restored'],1,result);self.assertFalse(result['held'])
+        encode.assert_called_once();self.assertFalse(video.exists())
+
+    def test_video_samples_enroll_faces_without_saved_frames(self):
+        frames=[Image.new('RGB',(32,32)) for _ in range(3)]
+        with patch.object(family_faces,'media_frames',return_value=iter(frames)),\
+             patch.object(family_faces,'encoder',return_value=Mock(encode=Mock(return_value=[FACE]))):
+            self.assertEqual(family_faces.encode_media(self.config,Path('test.mp4')),[FACE])
 
     def test_restore_unknown_origin_uses_normal_fallback(self):
         source,original,identity=self.input()

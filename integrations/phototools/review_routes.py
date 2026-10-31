@@ -138,7 +138,7 @@ def route(config,rows,out,apply=False,recycler=None,checks=('junk','tiktok','qua
             if selected in {'junk','tiktok'}:
                 import family_faces
                 bank=family_faces.load(config)
-                if bank['items'] and any(r.get('kind')=='photo' and
+                if bank['items'] and any(r.get('kind') in {'photo','video'} and
                         family_faces.inspect_path(config,Path(r['path'])).get('matched') for r in present):
                     result['family_protected']=result.get('family_protected',0)+len(present)
                     continue

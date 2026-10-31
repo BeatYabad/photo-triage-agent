@@ -444,6 +444,18 @@ class Analyzer:
 
         active=checks & IMAGE_CHECKS
 
+        if active & {'junk','tiktok'}:
+            import family_faces
+            try:
+                if family_faces.load(self.config)['items']:
+                    family=family_faces.inspect_path(self.config,path)
+                    if family.get('matched'):
+                        for check in active & {'junk','tiktok'}:results[check]=family_faces.protected_result(family)
+                        active=active-{'junk','tiktok'}
+            except Exception as exc:
+                for check in active & {'junk','tiktok'}:results[check]=failure(exc)
+                active=active-{'junk','tiktok'}
+
         if not active:return results
 
         force_ffmpeg=force_ffmpeg or self.config.get('video_force_ffmpeg',False)

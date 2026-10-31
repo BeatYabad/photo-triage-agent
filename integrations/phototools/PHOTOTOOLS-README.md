@@ -7,10 +7,10 @@ still apply. Separate local resources do not prove native Live Photo assembly.
 
 ## Restore and protect family photos
 
-Drop family photos in `C:/Users/steve/OneDrive/processed_files/RESTORE_FAMILY`.
+Drop family photos or videos in `C:/Users/steve/OneDrive/processed_files/RESTORE_FAMILY`.
 Every normal processing run handles this inbox first, before imports, other
 decision inboxes, or gallery checks, and checks it again at completion. Help and
-status remain read-only. Failed family restoration prevents starting the scan.
+status remain read-only. Unreadable family inputs prevent scan startup; cloud-only destinations stay pending while other files proceed.
 To process
 it immediately, run `C:/PhotoTools/runtime/Scripts/python.exe C:/PhotoTools/photos/photos.py restore-family`.
 This restores recorded original locations, or dated Personal Camera Roll when
@@ -23,8 +23,8 @@ independent and still run. Exact duplicates are still removed automatically.**
 Family restoration adds no NSFW safe-list entry. Existing separate RESTORE/SFW
 decisions retain their original meaning. Later explicit DELETE decisions still apply.
 Face matching is approximate; missed faces remain possible. No detected face
-still protects that exact reference from junk and reports a gap for other photos.
-This feature enrolls still images, not videos. Video screening remains unchanged.
+still restores and protects that exact reference from junk; it is not an enrollment failure.
+Videos enroll and compare faces from up to 12 evenly spaced frames in memory. A match protects the whole video from junk/TikTok only; NSFW and quality checks still run. Sampling can miss brief faces.
 
 References are anonymous face vectors in `C:/PhotoTools/runs/review/family-faces.json`;
 no face crops, copied photos, names, or cloud uploads are retained by the matcher.
@@ -952,3 +952,4 @@ can use the other worker. Native resolution and every configured sample/check
 remain unchanged. Five-minute file deadlines still apply; slot timeouts remain
 failed checks. Exact reviewed scheduling-only code retains compatible successful
 results; further source changes invalidate them normally.
+

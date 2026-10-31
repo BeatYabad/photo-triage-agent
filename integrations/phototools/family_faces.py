@@ -51,13 +51,44 @@ def protected_result(evidence):
             'reason':'family_face_protected','family_protection':evidence}
 
 
+def media_frames(config,path):
+    """Decode up to twelve video frames in memory; never retain frame files."""
+    from PIL import Image,ImageOps
+    from nsfw_analysis import VIDEOS
+    if Path(path).suffix.lower() in VIDEOS:
+        import cv2
+        from video_decode import FFmpegVideo
+        video=FFmpegVideo(Path(path),config)
+        end=max(0,video.duration-1/video.fps)
+        times=sorted({end*i/11 for i in range(12)})
+        for _,frame in video.iter_samples(times):
+            yield Image.fromarray(cv2.cvtColor(frame,cv2.COLOR_BGR2RGB))
+    else:
+        import pillow_heif
+        pillow_heif.register_heif_opener()
+        with Image.open(path) as image:
+            yield ImageOps.exif_transpose(image).convert('RGB')
+
+
+def encode_media(config,path):
+    from photo_triage.faces import matches
+    faces=[]
+    for frame in media_frames(config,path):
+        for face in encoder(config).encode(frame):
+            # Avoid storing the same person's near-identical sampled vectors.
+            if not faces or matches([face],faces).get('score',0)<.95:faces.append(face)
+    return faces
+
+
 def inspect_path(config,path):
     from PIL import Image,ImageOps
     import review_queue
     identity=review_queue.fresh(path)
-    import pillow_heif
-    pillow_heif.register_heif_opener()
-    with Image.open(path) as image:
-        result=inspect(config,ImageOps.exif_transpose(image).convert('RGB'),identity)
+    result=inspect(config,None,identity) if not any(item.get('faces') for item in load(config)['items'].values()) or identity['sha256'] in load(config)['items'] else None
+    if result is None:
+        result={'matched':False,'status':'checked','sampled_frames':0}
+        for number,frame in enumerate(media_frames(config,path),1):
+            result={**inspect(config,frame,identity),'sampled_frames':number}
+            if result.get('matched'):break
     if review_queue.fresh(path)!=identity:raise ValueError('Family comparison source changed')
     return result

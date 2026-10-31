@@ -2,14 +2,14 @@
 
 ## RESTORE_FAMILY integration
 
-PhotoTools' `photos.py restore-family` restores photos dropped into
+PhotoTools' `photos.py restore-family` restores photos and videos dropped into
 `processed_files/RESTORE_FAMILY` and enrolls their visible faces locally. Matching
 photos are protected from junk/TikTok nominations; **NSFW and quality checks are
 independent, and exact duplicates still clean up automatically**. This does not
 name people or add family likenesses to the NSFW safe list. See the deployed
 PhotoTools README for original-location restoration and reports.
 Every processing run handles RESTORE_FAMILY first, before imports, other inboxes,
-or gallery checks. Failed restoration blocks scan startup; help/status stay read-only.
+or gallery checks. Unreadable input blocks scan startup; cloud-only destinations remain pending while other media proceeds. Help/status stay read-only.
 
 The portable `photo_triage.faces` module uses pinned [OpenCV YuNet](https://github.com/opencv/opencv_zoo/tree/main/models/face_detection_yunet)
 and [SFace](https://github.com/opencv/opencv_zoo/tree/main/models/face_recognition_sface)
@@ -18,8 +18,8 @@ after installing this package. Downloads are SHA-256 verified; model licenses
 are saved alongside them. Only local vectors and receipts persist, never image
 crops or uploaded photos. All usable faces in an input are enrolled, so use
 photos containing only the people you want protected. Recognition is approximate;
-several views improve coverage. No-face inputs restore but leave an explicit
-enrollment gap. Videos are not enrolled or protected by this photo-only feature.
+several views improve coverage. No-face inputs restore normally without an
+enrollment failure. Videos use up to 12 evenly spaced frames, decoded only in memory; a matching face protects the video from junk/TikTok while NSFW and quality still run. Sampling can miss brief faces.
 
 Ordinary photos labeled with `personal_record` evidence remain non-junk and do
 not require uncertainty review. The original model evidence remains in the
@@ -120,3 +120,4 @@ environment and set `PHOTO_TRIAGE_ENDPOINT` and `PHOTO_TRIAGE_MODEL`.
 PhotoTools does not deploy or invoke its trash API.
 
 PhotoTools review routing accepts validated core category evidence for photos and sampled videos. Supported meme, screenshot, and receipt findings reach FOR_REVIEW without legacy detector labels. Incomplete or unsupported findings remain explicit gaps; this does not authorize permanent deletion.
+

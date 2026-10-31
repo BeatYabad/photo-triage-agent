@@ -63,5 +63,25 @@ class VideoFilterReviewTests(unittest.TestCase):
                 self.assertGreater(result['samples_read'],2)
             self.assertEqual(set(results),{'junk','quality'})
 
+    def test_family_video_still_runs_nsfw(self):
+        import cv2
+        import numpy as np
+        from photo_pass_analysis import Analyzer
+        with tempfile.TemporaryDirectory() as directory:
+            path=Path(directory)/'family.avi'
+            writer=cv2.VideoWriter(str(path),cv2.VideoWriter_fourcc(*'MJPG'),4,(64,48))
+            for _ in range(12):writer.write(np.full((48,64,3),128,np.uint8))
+            writer.release()
+            analyzer=Analyzer({})
+            with patch('family_faces.load',return_value={'items':{'ref':{}}}),\
+                 patch('family_faces.inspect_path',return_value={'matched':True}),\
+                 patch.object(analyzer,'model',return_value=None),\
+                 patch('triage_adapter.classify',side_effect=AssertionError('No junk for family')),\
+                 patch('nsfw_analysis.frame_result',return_value={'candidate':False,'status':'analyzed'}) as nsfw:
+                result=analyzer.video(path,{'junk','tiktok','nsfw'})
+            self.assertFalse(result['junk']['candidate']);self.assertFalse(result['tiktok']['candidate'])
+            self.assertGreater(nsfw.call_count,0)
+            self.assertNotEqual(result['nsfw']['status'],'error')
+
 
 if __name__=='__main__':unittest.main()
