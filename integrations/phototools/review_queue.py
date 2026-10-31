@@ -375,7 +375,7 @@ def restore_gallery_index(root, sizes):
 
 def restore_recorded_locations(roots,source,item,journal):
     """Known provenance restores exact locations; a conflict is never overwritten."""
-    from privacy_storage import verify,copy_verified
+    from privacy_storage import verify,copy_verified,cloud_placeholder
     import merge_photos as media
     targets=[]
     for original in item['origins']:
@@ -393,11 +393,11 @@ def restore_recorded_locations(roots,source,item,journal):
         if (original.get('sha256'),original.get('bytes'))!=(source['sha256'],source['bytes']):
             raise ValueError('Recorded original identity differs from RESTORE bytes')
         target=Path(original['path']);media.inside(target,Path(root))
-        if target.exists():verify(target,source['sha256'],source['bytes'])
+        if target.exists() and not cloud_placeholder(target):verify(target,source['sha256'],source['bytes'])
         targets.append((target,Path(root)))
     # Validate all occupied locations before publishing the first missing one.
     for target,root in targets:
-        copy_verified(Path(source['path']),target,root,source['sha256'],source['bytes'])
+        copy_verified(Path(source['path']),target,root,source['sha256'],source['bytes'],restore_placeholder=True)
         verify(target,source['sha256'],source['bytes'])
         media.journal(journal,{'action':'restore_original_verified','destination':str(target),
                               'sha256':source['sha256'],'bytes':source['bytes']})

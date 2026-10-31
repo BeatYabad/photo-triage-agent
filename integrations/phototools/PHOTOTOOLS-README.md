@@ -10,7 +10,7 @@ still apply. Separate local resources do not prove native Live Photo assembly.
 Drop family photos or videos in `C:/Users/steve/OneDrive/processed_files/RESTORE_FAMILY`.
 Every normal processing run handles this inbox first, before imports, other
 decision inboxes, or gallery checks, and checks it again at completion. Help and
-status remain read-only. Unreadable family inputs prevent scan startup; cloud-only destinations stay pending while other files proceed.
+status remain read-only. Unreadable family inputs prevent scan startup; cloud-only original paths are restored directly from the local inbox without downloading them first.
 To process
 it immediately, run `C:/PhotoTools/runtime/Scripts/python.exe C:/PhotoTools/photos/photos.py restore-family`.
 This restores recorded original locations, or dated Personal Camera Roll when
@@ -952,4 +952,7 @@ can use the other worker. Native resolution and every configured sample/check
 remain unchanged. Five-minute file deadlines still apply; slot timeouts remain
 failed checks. Exact reviewed scheduling-only code retains compatible successful
 results; further source changes invalidate them normally.
+
+
+Restoration replaces a cloud-only placeholder at the recorded original path using verified local inbox bytes. It verifies the new destination before clearing the inbox. Different locally available content is never overwritten.
 

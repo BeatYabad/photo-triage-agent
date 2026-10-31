@@ -81,6 +81,28 @@ class RestoreFamilyTests(unittest.TestCase):
         self.assertEqual(state['items'][identity['sha256']]['status'],'family_restore_pending')
         self.assertNotIn(identity['sha256'],state['excluded_sha256'])
 
+    def test_restore_replaces_cloud_placeholder_without_reading_it(self):
+        source,original,identity=self.input();original.write_bytes(b'cloud placeholder')
+        def fresh(path):
+            if Path(path)==original and original.read_bytes()==b'cloud placeholder':
+                raise AssertionError('Must not download or hash old placeholder')
+            return queue.fingerprint(path)
+        with patch.object(restore_family,'encode_file',return_value=[FACE]),\
+             patch('privacy_storage.cloud_placeholder',side_effect=lambda p:Path(p)==original),\
+             patch('file_deadline.replace_cloud_placeholder',side_effect=lambda temp,dest,expected:Path(temp).replace(dest)),\
+             patch.object(queue,'fresh',side_effect=fresh):
+            result=restore_family.process(self.config)
+        self.assertEqual(result['restored'],1,result);self.assertFalse(result['held'])
+        self.assertEqual(queue.fingerprint(original)['sha256'],identity['sha256'])
+        self.assertFalse(source.exists())
+
+    def test_restore_does_not_overwrite_different_resident_content(self):
+        source,original,_=self.input();original.write_bytes(b'different local photo')
+        with patch.object(restore_family,'encode_file',return_value=[FACE]):
+            result=restore_family.process(self.config)
+        self.assertTrue(result['held']);self.assertTrue(source.exists())
+        self.assertEqual(original.read_bytes(),b'different local photo')
+
     def test_video_input_is_enrolled_and_restored(self):
         source,original,identity=self.input()
         video=source.with_suffix('.mp4');source.rename(video)
