@@ -88,6 +88,10 @@ class Analyzer:
         if check=='metadata':files+=['digikam_metadata.py','live_photo_cleanup.py']
 
         digest=hashlib.sha256()
+        if check in IMAGE_CHECKS:
+            import family_faces
+            digest.update(family_faces.revision(self.config).encode())
+            files+=['family_faces.py']
 
         paths=[HERE/name for name in files]
 
@@ -319,11 +323,17 @@ class Analyzer:
 
 
 
-    def decoded_image(self,image,checks,dimensions,frames=1,make='',model=''):
+    def decoded_image(self,image,checks,dimensions,frames=1,make='',model='',family_check=True):
 
         """Apply image policies to an in-memory image or actual video frame."""
 
         results={};lines=None;ocr_error=None;ocr_size=None
+        family=None;family_error=None
+        if family_check and checks & {'junk','tiktok'}:
+            try:
+                import family_faces
+                family=family_faces.inspect(self.config,image,getattr(self,'current_identity',None))
+            except Exception as exc:family_error=failure(exc)
 
         if 'tiktok' in checks:
 
@@ -337,7 +347,11 @@ class Analyzer:
 
             try:
 
-                if check=='quality':
+                if check in {'junk','tiktok'} and family_error:
+                    result=family_error.copy()
+                elif check in {'junk','tiktok'} and family and family.get('matched'):
+                    result=family_faces.protected_result(family)
+                elif check=='quality':
 
                     import quality_analysis as quality
 
@@ -542,7 +556,7 @@ class Analyzer:
 
                 if seconds in review_times and frame_checks:
 
-                    assessed_frames=self.decoded_image(Image.fromarray(cv2.cvtColor(frame,cv2.COLOR_BGR2RGB)),frame_checks,list(dimensions),make='camera' if meta and meta.get('camera_metadata') else '')
+                    assessed_frames=self.decoded_image(Image.fromarray(cv2.cvtColor(frame,cv2.COLOR_BGR2RGB)),frame_checks,list(dimensions),make='camera' if meta and meta.get('camera_metadata') else '',family_check=False)
 
                     for check,result in assessed_frames.items():
 

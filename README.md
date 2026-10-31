@@ -1,5 +1,24 @@
 # Photo Triage Agent — Windows / PhotoTools fork
 
+## RESTORE_FAMILY integration
+
+PhotoTools' `photos.py restore-family` restores photos dropped into
+`processed_files/RESTORE_FAMILY` and enrolls their visible faces locally. Matching
+photos are protected from junk/TikTok nominations; **NSFW and quality checks are
+independent, and exact duplicates still clean up automatically**. This does not
+name people or add family likenesses to the NSFW safe list. See the deployed
+PhotoTools README for original-location restoration and reports.
+
+The portable `photo_triage.faces` module uses pinned [OpenCV YuNet](https://github.com/opencv/opencv_zoo/tree/main/models/face_detection_yunet)
+and [SFace](https://github.com/opencv/opencv_zoo/tree/main/models/face_recognition_sface)
+models on CPU. Install with `python scripts/install_family_models.py --output C:/PhotoTools/models/family-faces`
+after installing this package. Downloads are SHA-256 verified; model licenses
+are saved alongside them. Only local vectors and receipts persist, never image
+crops or uploaded photos. All usable faces in an input are enrolled, so use
+photos containing only the people you want protected. Recognition is approximate;
+several views improve coverage. No-face inputs restore but leave an explicit
+enrollment gap. Videos are not enrolled or protected by this photo-only feature.
+
 Ordinary photos labeled with `personal_record` evidence remain non-junk and do
 not require uncertainty review. The original model evidence remains in the
 report. Conflicting junk evidence and explicitly uncertain results remain gaps.

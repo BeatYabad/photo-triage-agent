@@ -135,6 +135,13 @@ def route(config,rows,out,apply=False,recycler=None,checks=('junk','tiktok','qua
         present=[r for r in group if Path(r['path']).exists()]
         if not present:continue
         try:
+            if selected in {'junk','tiktok'}:
+                import family_faces
+                bank=family_faces.load(config)
+                if bank['items'] and any(r.get('kind')=='photo' and
+                        family_faces.inspect_path(config,Path(r['path'])).get('matched') for r in present):
+                    result['family_protected']=result.get('family_protected',0)+len(present)
+                    continue
             if any(not r.get('sha256') for r in group):raise ValueError('Complete companion bytes are not available')
             if any(r.get('native_live_photo') and r.get('library')=='icloud' for r in present):
                 raise ValueError('Apple-managed Live Photo motion needs complete preservation before a review move')

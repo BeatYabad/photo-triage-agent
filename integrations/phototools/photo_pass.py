@@ -195,6 +195,13 @@ class FileProcessor:
     def process(self, row, prepared=False):
         results={};row=dict(row);claim=None
         resumed=row.pop('_resume_checks',{}) if prepared else {}
+        import family_faces
+        family_revision=family_faces.revision(self.config)
+        if family_revision!=getattr(self,'family_revision',None):
+            self.family_revision=family_revision
+            self.rules.clear();self.rule_errors.clear()
+            if hasattr(self.analyzer,'versions'):self.analyzer.versions.clear()
+            resumed={}
         if row['kind']=='unsupported':
             return {**row,'status':'unsupported','checks':{check:{'status':'unsupported','candidate':False} for check in self.checks}}
         requested=self.checks & IMAGE_CHECKS

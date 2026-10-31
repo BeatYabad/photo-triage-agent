@@ -27,6 +27,16 @@ def row(path,library='onedrive',kind='photo'):
             'bytes':st.st_size,'mtime_ns':st.st_mtime_ns,'status':'inventoried','placeholder':False,'native_live_photo':False}
 
 class PassTests(unittest.TestCase):
+    def test_family_reference_update_invalidates_cached_junk(self):
+        import family_faces
+        p=self.photo();processor=self.processor(['junk'])
+        bank=self.root/'family-faces.json';processor.config['family_state']=bank
+        self.model.rule=lambda check:'fixture-'+check+'-'+family_faces.revision(processor.config)
+        processor.process(row(p));self.model.calls.clear()
+        self.assertTrue(processor.process(row(p))['checks']['junk']['cache_reused'])
+        bank.write_text('{"version":1,"items":{}}')
+        self.assertFalse(processor.process(row(p))['checks']['junk']['cache_reused'])
+
     def setUp(self):
         self.tmp=tempfile.TemporaryDirectory();self.addCleanup(self.tmp.cleanup);self.root=Path(self.tmp.name)
         self.model=FakeAnalyzer()

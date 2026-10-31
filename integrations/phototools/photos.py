@@ -9,6 +9,7 @@ import photo_settings as settings
 
 HERE = Path(__file__).resolve().parent
 TASKS = {
+    'restore-family': 'Restore RESTORE_FAMILY photos and learn local faces for junk protection only',
     'triage-batch': 'Read-only resumable LFM/quality batches over explicit paths; no cleanup',
     'compare-selection': 'Read-only Czkawka comparison of explicit image paths; no cleanup or inbox actions',
     'merge-only-duplicates': 'Move every supplied file into Camera Roll; recycle exact duplicates, without any other filters',
@@ -160,6 +161,11 @@ def main():
         show(args.output);return 0
     os.environ['PHOTOS_CONFIG'] = str(a.config.resolve())
     for dep in reversed(config['dependencies']): sys.path.insert(0,str(dep))
+    if a.task=='restore-family':
+        import restore_family
+        argparse.ArgumentParser(description=restore_family.__doc__).parse_args(extra)
+        result=restore_family.process(config);print(json.dumps(result),flush=True)
+        return 2 if result['held'] or result['enrollment_gaps'] else 0
     if a.task in {'process-gallery','cleanup'} and '--folder' not in extra and not any(v in extra for v in ('--help','-h','--reuse','--resume')) and not os.environ.get('PHOTOS_UNATTENDED_CHILD'):
         import unattended_cleanup
         parser=argparse.ArgumentParser(add_help=False);parser.add_argument('--output',required=True,type=Path)

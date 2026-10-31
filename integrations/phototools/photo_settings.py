@@ -30,6 +30,9 @@ def load(path=None):
     data.setdefault('nsfw_review_folder',data['review_folder'].parent/'NSFW')
     data.setdefault('nsfw_confirmed_folder',data['nsfw_review_folder']/'CONFIRMED')
     data.setdefault('restore_folder',review_default('RESTORE'))
+    data['family_restore_folder']=absolute(data.get('family_restore_folder',data['restore_folder'].parent/'RESTORE_FAMILY'))
+    data['family_state']=absolute(data.get('family_state',data['review_state'].parent/'family-faces.json'))
+    data['family_models']=absolute(data.get('family_models',data['output'].parent/'models/family-faces'))
     data.setdefault('delete_folder',data['review_folder'].parent/'DELETE')
     data.setdefault('import_folder', data['roots']['onedrive'].parent/'IMPORT')
     data.setdefault('import_live_photos','preserve')
@@ -63,6 +66,10 @@ def load(path=None):
     if not isinstance(data['nsfw_threshold'],(int,float)) or not math.isfinite(data['nsfw_threshold']) or not 0<data['nsfw_threshold']<1:
         raise ValueError('NSFW threshold must be between zero and one')
     roots = list(data['roots'].values())
+    if any(data['family_restore_folder']==r or r in data['family_restore_folder'].parents for r in roots):
+        raise ValueError('RESTORE_FAMILY must be outside gallery roots')
+    if any(part.casefold().startswith(('onedrive','icloud')) for part in data['family_state'].parts):
+        raise ValueError('Family face references must stay outside synchronized folders')
     if any(a == b or a in b.parents or b in a.parents for i,a in enumerate(roots) for b in roots[i+1:]):
         raise ValueError('Gallery roots must be distinct and nonnested')
     for key in ('output', 'preservation'):
