@@ -127,3 +127,5 @@ Pending family restores use a separate status and never enter the NSFW safe inde
 Restore recorded cloud-only paths directly from local inbox bytes: verify a temporary local copy, replace the placeholder without downloading it, verify the destination, then clear the inbox. Resident content conflicts remain protected.
 
 PhotoTools permits 15 minutes per video analysis/enrollment, including decoder and queue waits. Photos and file copying retain their existing limits. Restart existing workers to apply changed execution deadlines.
+
+Run-scoped accepted-exceptions.json entries with skip_for_current_run exclude only the explicitly approved paths from fresh inventory. Restart carries this file forward; no global exclusion or deletion is created.

@@ -77,6 +77,7 @@ def _inventory(roots, mappings, excluded=(), include_unknown=False):
                 if name.casefold() in skip or scan.linked(p) or p.resolve() in excluded:dirs.remove(name)
             for name in files:
                 p=Path(directory)/name;ext=p.suffix.lower()
+                if p.resolve() in excluded:continue
                 if ext not in extensions and not include_unknown:continue
                 try:
                     media.inside(p,root);st=p.stat()
@@ -575,7 +576,8 @@ def run(config, checks, galleries=None, output=None, limit=0, timeout=300, proce
     try:
         from live_photo_cleanup import native_assets
         mappings=native_assets(config['icloud_database']) if 'icloud' in roots and config.get('icloud_database') else {}
-        inventory_started=time.perf_counter();rows,issues=inventory(roots,mappings,include_unknown=True) if config.get('include_unknown_files') else inventory(roots,mappings)
+        skipped=tuple(Path(p).resolve() for p in config.get('accepted_skip_paths',[]))
+        inventory_started=time.perf_counter();rows,issues=inventory(roots,mappings,excluded=skipped,include_unknown=bool(config.get('include_unknown_files')))
         inventory_seconds=time.perf_counter()-inventory_started
         check_stop(out)
         write(out/'inventory-issues.json',issues)

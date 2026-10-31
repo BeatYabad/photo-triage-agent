@@ -27,6 +27,11 @@ def row(path,library='onedrive',kind='photo'):
             'bytes':st.st_size,'mtime_ns':st.st_mtime_ns,'status':'inventoried','placeholder':False,'native_live_photo':False}
 
 class PassTests(unittest.TestCase):
+    def test_accepted_file_skip_does_not_touch_source_or_other_files(self):
+        excluded=self.photo('skip.jpg');included=self.photo('keep.jpg')
+        rows,issues=runner.inventory({'icloud':self.root},{},excluded=(excluded.resolve(),))
+        self.assertEqual([r['path'] for r in rows],[str(included)])
+        self.assertTrue(excluded.exists());self.assertFalse(issues)
     def test_video_limit_is_fifteen_minutes_without_extending_photo_or_prepare(self):
         for kind,stage,expected in [('video','inference',895),('photo','inference',295),('video','prepare',295)]:
             processor=runner.BoundedProcessor({'pipeline_stage':stage},set(),self.root/'unused.sqlite',set(),set(),300)

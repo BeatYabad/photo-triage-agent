@@ -23,6 +23,10 @@ def main():
     parser.add_argument('--resident-only', action='store_true', help='Skip cloud placeholders without downloading originals')
     args = parser.parse_args()
     config = settings.load()
+    exceptions=args.output/'accepted-exceptions.json'
+    if exceptions.exists():
+        accepted=json.loads(exceptions.read_text(encoding='utf-8-sig'))
+        config={**config,'accepted_skip_paths':[r['path'] for r in accepted['items'] if r.get('decision')=='skip_for_current_run']}
     if args.apply:
         import restore_family
         restore_family.before_run(config)
