@@ -67,7 +67,7 @@ def process(config):
                 bank['items'][digest]['origins']=item.get('origins',[])
                 roots=reaudit_nsfw.recorded_roots(config,item,source)
                 restored=queue.restore_files(roots,config['review_state'],folder,None,
-                    config['review_state'].parent/'review-actions.jsonl',inventory_rows=[source],eligible_hashes={digest},remember_keep=False)
+                    config['review_state'].parent/'review-actions.jsonl',inventory_rows=[source],eligible_hashes={digest},remember_keep=False,family_only=True)
                 result['restored']+=restored['restore_files_cleared']
                 for hold in restored['held']:
                     # The input and enrolled protection remain intact. An offline

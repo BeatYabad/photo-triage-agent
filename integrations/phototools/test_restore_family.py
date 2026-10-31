@@ -71,6 +71,16 @@ class RestoreFamilyTests(unittest.TestCase):
         self.assertTrue(result['held']);self.assertTrue(source.exists());self.assertFalse(original.exists())
         self.assertFalse(family_faces.load(self.config)['items'])
 
+    def test_pending_family_restore_never_excludes_nsfw(self):
+        source,original,identity=self.input()
+        with patch.object(restore_family,'encode_file',return_value=[FACE]),\
+             patch.object(queue,'restore_recorded_locations',side_effect=ValueError('Nonresident placeholder')):
+            result=restore_family.process(self.config)
+        self.assertTrue(source.exists());self.assertTrue(result['held'][0]['nonblocking'])
+        state=queue.load_state(self.config['review_state'])
+        self.assertEqual(state['items'][identity['sha256']]['status'],'family_restore_pending')
+        self.assertNotIn(identity['sha256'],state['excluded_sha256'])
+
     def test_video_input_is_enrolled_and_restored(self):
         source,original,identity=self.input()
         video=source.with_suffix('.mp4');source.rename(video)

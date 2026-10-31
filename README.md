@@ -121,3 +121,5 @@ PhotoTools does not deploy or invoke its trash API.
 
 PhotoTools review routing accepts validated core category evidence for photos and sampled videos. Supported meme, screenshot, and receipt findings reach FOR_REVIEW without legacy detector labels. Incomplete or unsupported findings remain explicit gaps; this does not authorize permanent deletion.
 
+
+Pending family restores use a separate status and never enter the NSFW safe index.

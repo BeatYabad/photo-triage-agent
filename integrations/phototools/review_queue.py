@@ -18,7 +18,7 @@ import sys
 import time
 import uuid
 
-VALID_STATUSES={'copy_pending','reviewing','restore_pending','kept','delete_pending','deleted'}
+VALID_STATUSES={'copy_pending','reviewing','restore_pending','family_restore_pending','kept','delete_pending','deleted'}
 
 def load_state(path):
     path=Path(path)
@@ -431,12 +431,13 @@ def deliver_restore_to_gallery(roots,source,item,stage,journal,index):
     return target
 
 
-def restore_files(roots,state_path,restore,stage,journal,inventory_rows=None,eligible_hashes=None,remember_keep=True):
+def restore_files(roots,state_path,restore,stage,journal,inventory_rows=None,eligible_hashes=None,remember_keep=True,family_only=False):
     import merge_photos as media
     import scan_reference_photos as scan
     from privacy_storage import copy_verified,verify
     from photo_names import choose,original_name
     data=load_state(state_path);held=[];kept=0;cleared=0;inputs={};previously_kept=set();restored_destinations={}
+    pending_status='family_restore_pending' if family_only else 'restore_pending'
     files,issues=scan.inventory({'restore':restore},scan.PHOTOS|__import__('nsfw_analysis').VIDEOS|set(media.SIDECARS)) if inventory_rows is None else (inventory_rows,[])
     held.extend(issues)
     for file in files:
@@ -452,17 +453,17 @@ def restore_files(roots,state_path,restore,stage,journal,inventory_rows=None,eli
             if not remember_keep:item['restore_recheck']=True
             if h in previously_kept:item['restore_preserve_prior_keep']=True
             inputs.setdefault(h,[]).append(source)
-            item['status']='restore_pending';item['restore_source']=source;save_state(state_path,data)
+            item['status']=pending_status;item['restore_source']=source;save_state(state_path,data)
         except (OSError,ValueError,subprocess.TimeoutExpired) as exc:held.append({'path':file['path'],'error':str(exc)})
     # Finish pending keeps after interruption even if input filenames were changed.
-    pending=[(h,item) for h,item in data['items'].items() if item['status']=='restore_pending' and (eligible_hashes is None or h in eligible_hashes)]
+    pending=[(h,item) for h,item in data['items'].items() if item['status']==pending_status and (eligible_hashes is None or h in eligible_hashes)]
     unknown=[item for _,item in pending if not item['origins']]
     try:index=restore_gallery_index(roots['onedrive'],{item['representative']['bytes'] for item in unknown}) if unknown else ({},set())
     except (OSError,ValueError,KeyError) as exc:
         held.append({'error':str(exc)})
         return {'new_kept_hashes':kept,'restore_files_cleared':cleared,'held':held,'source_deletions':0,'cloud_coverage_verified':False}
     for h,item in list(data['items'].items()):
-        if item['status']!='restore_pending':continue
+        if item['status']!=pending_status:continue
         if eligible_hashes is not None and h not in eligible_hashes:continue
         try:
             source=item['restore_source'];media.inside(Path(source['path']),restore)
