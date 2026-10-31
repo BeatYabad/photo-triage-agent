@@ -166,6 +166,13 @@ def main():
         argparse.ArgumentParser(description=restore_family.__doc__).parse_args(extra)
         result=restore_family.process(config);print(json.dumps(result),flush=True)
         return 2 if result['held'] or result['enrollment_gaps'] else 0
+    family_start=not any(flag in extra for flag in ('--help','-h')) and a.task not in {
+        'check','triage-batch','compare-selection','review-status','review-reasons',
+        'nsfw-model-test','nsfw-policy-test','stop'}
+    if a.task=='review-pending' and '--verify' in extra:family_start=False
+    if family_start:
+        import restore_family
+        restore_family.before_run(config)
     if a.task in {'process-gallery','cleanup'} and '--folder' not in extra and not any(v in extra for v in ('--help','-h','--reuse','--resume')) and not os.environ.get('PHOTOS_UNATTENDED_CHILD'):
         import unattended_cleanup
         parser=argparse.ArgumentParser(add_help=False);parser.add_argument('--output',required=True,type=Path)

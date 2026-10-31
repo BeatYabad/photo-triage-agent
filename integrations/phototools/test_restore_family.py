@@ -132,6 +132,20 @@ class RestoreFamilyTests(unittest.TestCase):
         family_faces.state_path(self.config).write_text(json.dumps({'version':1,'items':{'ref':{'faces':[FACE]}}}))
         self.assertNotEqual(before,family_faces.revision(self.config))
 
+    def test_family_intake_failure_blocks_run_start(self):
+        with patch.object(restore_family,'process',return_value={'held':[{'error':'unreadable input'}]}):
+            with self.assertRaisesRegex(ValueError,'RESTORE_FAMILY'):
+                restore_family.before_run(self.config)
+
+    def test_direct_gallery_run_checks_family_before_health_or_import(self):
+        import cleanup_one_gallery as cleanup
+        with patch('sys.argv',['cleanup_one_gallery.py','--gallery','icloud','--output',str(self.base/'run'),'--apply']),\
+             patch.object(cleanup.settings,'load',return_value=self.config),\
+             patch.object(restore_family,'before_run',side_effect=ValueError('family first')) as family,\
+             patch.object(cleanup,'check') as health,patch('scan_import.run') as imports:
+            with self.assertRaisesRegex(ValueError,'family first'):cleanup.main()
+        family.assert_called_once_with(self.config);health.assert_not_called();imports.assert_not_called()
+
 
 if __name__=='__main__':unittest.main()
 

@@ -20,6 +20,15 @@ def encode_file(config,path):
     return json.loads(result.stdout.strip().splitlines()[-1])
 
 
+def before_run(config):
+    """Apply family decisions before imports, detectors, or other inbox actions."""
+    result=process(config)
+    print(json.dumps({'restore_family':result}),flush=True)
+    if result['held']:
+        raise ValueError('RESTORE_FAMILY could not finish; see restore-family-report.json')
+    return result
+
+
 def process(config):
     folder=Path(config.get('family_restore_folder',config['restore_folder'].parent/'RESTORE_FAMILY'))
     result={'restored':0,'enrolled_faces':0,'held':[],'enrollment_gaps':[]}

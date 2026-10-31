@@ -8,6 +8,8 @@ photos are protected from junk/TikTok nominations; **NSFW and quality checks are
 independent, and exact duplicates still clean up automatically**. This does not
 name people or add family likenesses to the NSFW safe list. See the deployed
 PhotoTools README for original-location restoration and reports.
+Every processing run handles RESTORE_FAMILY first, before imports, other inboxes,
+or gallery checks. Failed restoration blocks scan startup; help/status stay read-only.
 
 The portable `photo_triage.faces` module uses pinned [OpenCV YuNet](https://github.com/opencv/opencv_zoo/tree/main/models/face_detection_yunet)
 and [SFace](https://github.com/opencv/opencv_zoo/tree/main/models/face_recognition_sface)

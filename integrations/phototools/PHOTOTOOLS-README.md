@@ -8,7 +8,10 @@ still apply. Separate local resources do not prove native Live Photo assembly.
 ## Restore and protect family photos
 
 Drop family photos in `C:/Users/steve/OneDrive/processed_files/RESTORE_FAMILY`.
-Normal processing handles this inbox before and after a gallery run. To process
+Every normal processing run handles this inbox first, before imports, other
+decision inboxes, or gallery checks, and checks it again at completion. Help and
+status remain read-only. Failed family restoration prevents starting the scan.
+To process
 it immediately, run `C:/PhotoTools/runtime/Scripts/python.exe C:/PhotoTools/photos/photos.py restore-family`.
 This restores recorded original locations, or dated Personal Camera Roll when
 origins are unknown, verifies exact restored bytes, and clears successful inputs.
