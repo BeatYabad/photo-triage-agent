@@ -14,7 +14,9 @@ from two_library_duplicates import write_json
 def encode_file(config,path):
     command=[sys.executable,str(Path(__file__).resolve()),'--encode',str(path),
              '--model-folder',str(config.get('family_models','C:/PhotoTools/models/family-faces'))]
-    result=subprocess.run(command,capture_output=True,text=True,timeout=300,
+    from nsfw_analysis import VIDEOS
+    timeout=min(float(config.get('video_file_timeout',900)),900) if Path(path).suffix.lower() in VIDEOS else 300
+    result=subprocess.run(command,capture_output=True,text=True,timeout=timeout,
                           creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0))
     if result.returncode:raise RuntimeError('Family enrollment failed: '+result.stderr[-1500:])
     return json.loads(result.stdout.strip().splitlines()[-1])

@@ -956,3 +956,5 @@ results; further source changes invalidate them normally.
 
 Restoration replaces a cloud-only placeholder at the recorded original path using verified local inbox bytes. It verifies the new destination before clearing the inbox. Different locally available content is never overwritten.
 
+
+Video analysis and video family enrollment allow up to 15 minutes per file. Decoder and video-slot limits match that ceiling; photo processing, hashing and file copies retain five-minute limits. Already-running workers require a restart to load this change.

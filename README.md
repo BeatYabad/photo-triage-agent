@@ -125,3 +125,5 @@ PhotoTools review routing accepts validated core category evidence for photos an
 Pending family restores use a separate status and never enter the NSFW safe index.
 
 Restore recorded cloud-only paths directly from local inbox bytes: verify a temporary local copy, replace the placeholder without downloading it, verify the destination, then clear the inbox. Resident content conflicts remain protected.
+
+PhotoTools permits 15 minutes per video analysis/enrollment, including decoder and queue waits. Photos and file copying retain their existing limits. Restart existing workers to apply changed execution deadlines.

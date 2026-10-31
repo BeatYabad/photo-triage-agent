@@ -325,6 +325,7 @@ class RuntimeUnavailable(RuntimeError):
 class BoundedProcessor:
     def __init__(self, config, checks, database, protected, deleted, timeout):
         self.args=(config,checks,database,protected,deleted);self.timeout=min(float(timeout),300)
+        self.video_timeout=max(self.timeout,min(float(config.get('video_file_timeout',900)),900))
         self.process=None;self.conn=None
         self.lifecycle=threading.RLock();self.stopping=threading.Event();self.restarts=0
         self.consecutive_failures=0
@@ -370,7 +371,8 @@ class BoundedProcessor:
         ready=False
         started=time.monotonic()
         spent=float(row.get('_file_processing_seconds',0))
-        deadline=started+max(0,self.timeout-spent)
+        limit=self.video_timeout if row.get('kind')=='video' and self.args[0].get('pipeline_stage')!='prepare' else self.timeout
+        deadline=started+max(0,limit-spent)
         try:
             if self.stopping.is_set():raise ValueError('Worker stopped')
             if not self.process:

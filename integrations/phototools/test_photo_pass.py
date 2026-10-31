@@ -27,6 +27,14 @@ def row(path,library='onedrive',kind='photo'):
             'bytes':st.st_size,'mtime_ns':st.st_mtime_ns,'status':'inventoried','placeholder':False,'native_live_photo':False}
 
 class PassTests(unittest.TestCase):
+    def test_video_limit_is_fifteen_minutes_without_extending_photo_or_prepare(self):
+        for kind,stage,expected in [('video','inference',895),('photo','inference',295),('video','prepare',295)]:
+            processor=runner.BoundedProcessor({'pipeline_stage':stage},set(),self.root/'unused.sqlite',set(),set(),300)
+            processor.process=object();processor.conn=object()
+            with patch('photo_pass.time.monotonic',return_value=100),patch('file_deadline.exchange',return_value={}) as exchange:
+                processor.process_row({'kind':kind,'_file_processing_seconds':5})
+            self.assertEqual(exchange.call_args.args[1],expected)
+
     def test_family_reference_update_invalidates_cached_junk(self):
         import family_faces
         p=self.photo();processor=self.processor(['junk'])
@@ -241,7 +249,7 @@ class PassTests(unittest.TestCase):
             reader=FFmpegVideo(self.root/'movie.wmv',{'ffmpeg':'ffmpeg.exe'})
         self.assertEqual(reader.count,30);self.assertEqual(reader.duration,1)
         self.assertIn('0:V:0',run.call_args.args[0]);self.assertIn('-xerror',run.call_args.args[0])
-        self.assertEqual(run.call_args.kwargs['timeout'],180)
+        self.assertEqual(run.call_args.kwargs['timeout'],900)
         for output in (Mock(returncode=1,stderr=b'decode failed',stdout=b''),
                        Mock(returncode=0,stderr=b'',stdout=b'frame=1\nout_time_us=1\nprogress=continue\n')):
             with patch('video_decode.subprocess.run',return_value=output),self.assertRaises(ValueError):
