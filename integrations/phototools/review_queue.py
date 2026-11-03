@@ -157,7 +157,9 @@ _fingerprints=None
 def fresh(path):
     global _fingerprints
     if _fingerprints is None:
-        _fingerprints=FingerprintWorker();atexit.register(_fingerprints.close)
+        # Hashing retains the user's five-minute file-operation budget, including
+        # large videos checked before/after family matching.
+        _fingerprints=FingerprintWorker(timeout=300);atexit.register(_fingerprints.close)
     return _fingerprints.read(path)
 
 def origin(path,label,root):

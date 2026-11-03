@@ -145,3 +145,13 @@ originals still visually unreadable after the second check go to
 This supersedes his earlier keep-in-gallery choice. Recognizable
 but ambiguous scenes still require resolution. This does not exempt NSFW checks.
 
+
+Cleanup repair checks RESTORE_FAMILY before processing failures. Fresh review/family
+hashes use the existing five-minute file-operation limit. Exact duplicate removal
+checks companions of the removed source; untouched keeper siblings do not block it.
+Live Photo components remain distinct from standalone stills.
+
+Review grouping separates native Live Photos from standalone stills with identical
+image bytes. `repair_review_moves.py --run RUN --apply` retries that run's blocked
+and returned review files only after fresh exact-content verification. It records
+changed/unavailable files separately and never reuses their old nominations.

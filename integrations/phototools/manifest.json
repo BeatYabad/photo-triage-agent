@@ -22,7 +22,7 @@
   "family_faces.py": "6de8cb24e47bdfbf63a55c64bf794f7d17f15783b928c79500750a0bf9cd6965",
   "restore_family.py": "76fdb3fb4acb067cb5871e200ea5592136ce0953fb7519c7ef243265f82fd9e2",
   "decision_inboxes.py": "5de355f9d836f4706c229e3c5f843391ce2790e5721d755fcbe811012c6e0990",
-  "review_queue.py": "10d6ca90d30bb3fb264b9709b7b61286dae5bee37e7996093e6cfe778665c3a3",
+  "review_queue.py": "748d3b985b5b77813e89d645be3d5843d3637adbcfa6d957318e04364bb86738",
   "nsfw_review.py": "26bfd35eceba32155fc8f5c00a50bd3b4cd8a0c21d9cf57da58b7651f3b1c154",
   "review_deletions.py": "fdd9b69e884af50f8966b127f63751c00fde7424abf36ff0ca3de77d80ae6dc1",
   "test_restore_family.py": "2247a7912865f7f3b8b2f0c9db7d2e1f7e041e416d5fde0d7f9149da0dbec955",
@@ -34,5 +34,14 @@
   "video_decode_slot.py": "7fc020ac2a4a60b90888aec533cb02e9522bbab17a52005ea9f925e4898b5837",
   "video_decode.py": "c5f9984fd3a0cc322d96d939097c0bb949068e0aa9867ed4f7f7b5a061207e80",
   "review_categories.py": "77ad515b60e4fa1ca8ba98fdd03d4bbe0278dc29e8ac2716ca072230f085cc43",
-  "move_unreadable_review.py": "558f3e80c952c89fc24dbd631e72b01c341584de7e86903f76a19db80e4bb0de"
+  "move_unreadable_review.py": "558f3e80c952c89fc24dbd631e72b01c341584de7e86903f76a19db80e4bb0de",
+  "repair_scan_failures.py": "afc04690caa80a692e7e1af1aa03fbdd5cd2e8910884149a5c1004414c3473e0",
+  "two_library_duplicates.py": "b85ee9e30a4251ef3b464b8b1e42351986c25c8eb65655994d9027ac86bc8179",
+  "verified_duplicate_recycle.py": "90d1d7a3237ef28743bdf8d6eb03e26a80cf9450b869a6fcb9615aeb9fb6fd4f",
+  "resolve_duplicate_holds.py": "75a3d5d8d2042ca8bfbf41be194417c608f94f120de1f5ccfd436d6c14943431",
+  "test_two_library_duplicates.py": "32bc3ea7c7acd5c03a76dca31f969e1858131b64e2cf43eaea018415fc5c39d6",
+  "folder_ingest.py": "cd382863a4e8f1e19dedb113f2b415ca72febd6a987c527ec1f76b3b146739be",
+  "test_folder_ingest.py": "9d60992fd7991ba66646695a250106fc3f7cbdb040a51de1497caf1f5534ad35",
+  "repair_review_moves.py": "b3a150e3d7bcdbd6bd5084dbf0f2425c7bb1e5627d37f93296ba5c07e707812d",
+  "test_repair_review_moves.py": "348a84605baa0a419035d16abf8f66e8389b66f29d3832b79391add196f59f09"
 }
