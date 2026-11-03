@@ -132,7 +132,7 @@ Run-scoped accepted-exceptions.json entries with skip_for_current_run exclude on
 # Local classification recovery
 
 Ambiguous junk classifications receive one additional full-scene check at up to
-1920 pixels, with guidance distinguishing photographed screens and reference
+1536 pixels (within the deployed model's context), with guidance distinguishing photographed screens and reference
 photos from screenshots. Both observations are retained. Clear results use one
 inference. The response budget is 512 tokens with concise observations, and
 malformed or truncated model output gets one formatting retry within the same

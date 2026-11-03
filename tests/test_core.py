@@ -1,6 +1,7 @@
 import unittest
 import io
 import json
+import base64
 from unittest.mock import patch
 from PIL import Image, ImageDraw
 from photo_triage.batch import batches, process_batches
@@ -9,6 +10,16 @@ from photo_triage.vision import VisionProvider, junk_result, validate
 
 
 class CoreTests(unittest.TestCase):
+    def test_followup_image_fits_deployed_context(self):
+        response={'choices':[{'finish_reason':'stop','message':{'content':json.dumps({
+            'category':'ordinary_photo','observation':'Room','evidence_type':'none'})}}]}
+        with patch('urllib.request.urlopen',return_value=io.BytesIO(json.dumps(response).encode())) as request:
+            VisionProvider()._inspect_once(Image.new('RGB',(2048,2048)),followup=True)
+        payload=json.loads(request.call_args.args[0].data)
+        url=payload['messages'][1]['content'][1]['image_url']['url']
+        with Image.open(io.BytesIO(base64.b64decode(url.split(',',1)[1]))) as image:
+            self.assertEqual(image.size,(1536,1536))
+
     def test_unreadable_keep_requires_completed_recheck(self):
         evidence={'category':'uncertain','observation':'Original is black and blurred',
                   'evidence_type':'uncertain','visibility':'unreadable'}

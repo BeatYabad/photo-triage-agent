@@ -79,7 +79,8 @@ class VisionProvider:
             self.ready = True
         from PIL import ImageOps
         im = ImageOps.exif_transpose(image).convert('RGB').copy()
-        im.thumbnail((1920, 1920) if followup else (1280, 1280))
+        # A square 1920px view plus instructions exceeds the deployed 4096-token context.
+        im.thumbnail((1536, 1536) if followup else (1280, 1280))
         data = io.BytesIO()
         im.save(data, format='PNG')
         schema = {'type': 'object', 'properties': {
