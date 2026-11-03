@@ -7,6 +7,32 @@ from photo_triage.vision import VisionProvider, junk_result, validate
 
 
 class CoreTests(unittest.TestCase):
+    def test_uncertain_gets_full_scene_recheck(self):
+        first={'category':'uncertain','observation':'Presentation screen','evidence_type':'uncertain'}
+        second={'category':'ordinary_photo','observation':'Audience in conference room','evidence_type':'none'}
+        provider=VisionProvider()
+        with patch.object(provider,'_inspect_once',side_effect=[first,second]) as inspect:
+            result=provider.inspect(Image.new('RGB',(3000,2000)))
+        self.assertEqual(inspect.call_count,2)
+        self.assertTrue(inspect.call_args.kwargs['followup'])
+        self.assertEqual(result['initial_evidence'],first)
+        self.assertEqual(junk_result(result,[3000,2000])['status'],'analyzed')
+
+    def test_recheck_does_not_force_unsupported_classification(self):
+        evidence={'category':'uncertain','observation':'Indistinct shapes','evidence_type':'uncertain'}
+        provider=VisionProvider()
+        with patch.object(provider,'_inspect_once',return_value=evidence) as inspect:
+            result=provider.inspect(Image.new('RGB',(20,20)))
+        self.assertEqual(inspect.call_count,2)
+        self.assertEqual(junk_result(result,[20,20])['status'],'needs_review')
+
+    def test_clear_result_needs_no_second_inference(self):
+        evidence={'category':'ordinary_photo','observation':'Family at table','evidence_type':'none'}
+        provider=VisionProvider()
+        with patch.object(provider,'_inspect_once',return_value=evidence) as inspect:
+            self.assertEqual(provider.inspect(Image.new('RGB',(20,20))),evidence)
+        self.assertEqual(inspect.call_count,1)
+
     def test_batches_are_bounded_and_complete(self):
         self.assertEqual(list(batches(range(5),2)), [[0,1],[2,3],[4]])
         self.assertEqual(list(process_batches(range(7), iter, 3)), list(range(7)))

@@ -52,6 +52,14 @@ class VisionProvider:
         self.ready = False
 
     def inspect(self, image):
+        first = self._inspect_once(image)
+        if junk_result(first, image.size)['status'] != 'needs_review':
+            return first
+        # Resolve missing context with a larger full-frame view, not a forced label.
+        second = self._inspect_once(image, followup=True)
+        return {**second, 'initial_evidence': first, 'review_attempts': 2}
+
+    def _inspect_once(self, image, followup=False):
         if self.failures >= 3:
             raise RuntimeError('Triage model unavailable after three failures')
         if not self.ready:
@@ -59,7 +67,7 @@ class VisionProvider:
                 self.ensure()
             self.ready = True
         im = image.convert('RGB').copy()
-        im.thumbnail((1280, 1280))
+        im.thumbnail((1920, 1920) if followup else (1280, 1280))
         data = io.BytesIO()
         im.save(data, format='PNG')
         schema = {'type': 'object', 'properties': {
@@ -67,8 +75,15 @@ class VisionProvider:
             'evidence_type': {'type': 'string', 'enum': sorted(EVIDENCE_TYPES)},
             'category': {'type': 'string', 'enum': sorted(CATEGORIES)}},
             'required': ['observation', 'evidence_type', 'category'], 'additionalProperties': False}
-        payload = {'model': self.model, 'temperature': 0, 'max_tokens': 240,
-                   'messages': [{'role': 'system', 'content': PROMPT},
+        clarification = (' Re-examine the full scene. Distinguish a photographed screen, sign, '
+                         'presentation, or document from a captured screenshot. Describe the '
+                         'surroundings and concrete category evidence. Ordinary reference and '
+                         'event photographs are ordinary_photo even when some text is unreadable. '
+                         'Use uncertain only when the visual category itself cannot be established; '
+                         'do not invent detail or force a junk classification.') if followup else ''
+        payload = {'model': self.model, 'temperature': 0, 'max_tokens': 512,
+                   'messages': [{'role': 'system', 'content': PROMPT + clarification +
+                                ' Keep observation to two short sentences.'},
                                 {'role': 'user', 'content': [
                                     {'type': 'text', 'text': 'Classify this full image.'},
                                     {'type': 'image_url', 'image_url': {'url':
@@ -80,7 +95,10 @@ class VisionProvider:
                                              headers={'Content-Type': 'application/json'})
             with urllib.request.urlopen(request, timeout=self.timeout) as response:
                 result = json.load(response)
-            value = validate(json.loads(result['choices'][0]['message']['content']))
+            choice = result['choices'][0]
+            if choice.get('finish_reason') == 'length':
+                raise ValueError('Triage response truncated before classification completed')
+            value = validate(json.loads(choice['message']['content']))
             self.failures = 0
             return {**value, 'model': self.model, 'source': 'photo_triage_agent',
                     'scope': 'whole_image_resized_without_crop'}
