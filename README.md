@@ -139,4 +139,8 @@ malformed or truncated model output gets one formatting retry within the same
 request deadline, with a larger token budget. Persistent errors remain explicit.
 A second uncertain result is never
 converted into an unsupported junk nomination. Images stay in request memory.
+EXIF orientation is applied before inspection. Per Steve's November 2 choice,
+originals still visually unreadable after the second check stay in the gallery
+with the explicit `user_keep_unreadable_original` junk disposition. Recognizable
+but ambiguous scenes still require resolution. This does not exempt NSFW checks.
 

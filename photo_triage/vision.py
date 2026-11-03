@@ -16,6 +16,11 @@ Memes include captioned pictures, reaction images, cartoons, parodies and text j
 A photographed funny sign can be a meme, but ordinary signs and reference photos are not junk.
 A screenshot requires captured app or operating-system UI. A receipt requires transaction evidence.
 Personal records, family photos and useful reference photos must not be classified as junk just for containing text.
+Ordinary photos include conferences, stage performances, theme parks, costumed characters and photographed exhibits.
+Not knowing the person, venue or event does not make a recognizable photograph uncertain.
+A costume or fictional character alone does not prove a cartoon, meme or internet download.
+A completed hotel or retail purchase bill with itemized charges is receipt with transaction_details.
+Bank statements, IDs and other personal records without a purchase receipt are personal_document with personal_record.
 Missing EXIF, small size, or a familiar face do not prove internet provenance.
 Describe concrete visible composition and context. Do not identify people or recommend deletion.
 Choose evidence_type: humorous_caption, cartoon, reaction_image, captured_ui, transaction_details, personal_record, none, uncertain.
