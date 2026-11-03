@@ -37,8 +37,13 @@ def validate(value):
         raise ValueError('Missing visual evidence')
     if value.get('evidence_type') not in EVIDENCE_TYPES:
         raise ValueError('Missing category-specific visual evidence')
-    return {'category': value['category'], 'observation': observation.strip(),
-            'evidence_type': value['evidence_type']}
+    result = {'category': value['category'], 'observation': observation.strip(),
+              'evidence_type': value['evidence_type']}
+    if 'visibility' in value:
+        if value['visibility'] not in {'readable', 'unreadable'}:
+            raise ValueError('Invalid visual readability')
+        result['visibility'] = value['visibility']
+    return result
 
 
 class VisionProvider:
@@ -67,15 +72,17 @@ class VisionProvider:
             if self.ensure:
                 self.ensure()
             self.ready = True
-        im = image.convert('RGB').copy()
+        from PIL import ImageOps
+        im = ImageOps.exif_transpose(image).convert('RGB').copy()
         im.thumbnail((1920, 1920) if followup else (1280, 1280))
         data = io.BytesIO()
         im.save(data, format='PNG')
         schema = {'type': 'object', 'properties': {
             'observation': {'type': 'string', 'maxLength': 400},
+            'visibility': {'type': 'string', 'enum': ['readable', 'unreadable']},
             'evidence_type': {'type': 'string', 'enum': sorted(EVIDENCE_TYPES)},
             'category': {'type': 'string', 'enum': sorted(CATEGORIES)}},
-            'required': ['observation', 'evidence_type', 'category'], 'additionalProperties': False}
+            'required': ['observation', 'evidence_type', 'category', 'visibility'], 'additionalProperties': False}
         clarification = (' Re-examine the full scene. Distinguish a photographed screen, sign, '
                          'presentation, or document from a captured screenshot. Describe the '
                          'surroundings and concrete category evidence. Ordinary reference and '
@@ -84,7 +91,10 @@ class VisionProvider:
                          'do not invent detail or force a junk classification.') if followup else ''
         payload = {'model': self.model, 'temperature': 0, 'max_tokens': 512,
                    'messages': [{'role': 'system', 'content': PROMPT + clarification +
-                                ' Keep observation to two short sentences.'},
+                                ' Keep observation to two short sentences. Set visibility to unreadable '
+                                'only if darkness, blur, obstruction or noise prevents recognizing '
+                                'meaningful scene content. Partly illegible text alone does not make '
+                                'a recognizable scene unreadable. Otherwise use readable.'},
                                 {'role': 'user', 'content': [
                                     {'type': 'text', 'text': 'Classify this full image.'},
                                     {'type': 'image_url', 'image_url': {'url':
@@ -140,9 +150,16 @@ def junk_result(evidence, dimensions, frames=1):
     # without turning this harmless label overlap into a review requirement.
     if category == 'ordinary_photo' and value['evidence_type'] not in {'none', 'personal_record'}:
         uncertain = True
+    keep_unreadable = (category == 'uncertain' and evidence.get('visibility') == 'unreadable'
+                       and evidence.get('review_attempts', 0) >= 2)
+    if keep_unreadable:
+        # Steve's explicit choice: retain originals unreadable after recovery checks.
+        # This is a junk-filter disposition, never an NSFW clearance.
+        uncertain = False
     return {'status': 'needs_review' if uncertain else 'analyzed',
             'candidate': candidate, 'category': category if candidate else None,
             'dimensions': dimensions, 'frames': frames, 'contextual_evidence': evidence,
-            'nomination_reason': 'full_image_category_evidence' if candidate else 'no_supported_junk',
+            'nomination_reason': 'user_keep_unreadable_original' if keep_unreadable else
+                                 'full_image_category_evidence' if candidate else 'no_supported_junk',
             'holds': ['junk_context_uncertain'] if uncertain else
                      ['visual_review_required'] if candidate else []}

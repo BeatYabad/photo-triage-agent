@@ -9,6 +9,16 @@ from photo_triage.vision import VisionProvider, junk_result, validate
 
 
 class CoreTests(unittest.TestCase):
+    def test_unreadable_keep_requires_completed_recheck(self):
+        evidence={'category':'uncertain','observation':'Original is black and blurred',
+                  'evidence_type':'uncertain','visibility':'unreadable'}
+        self.assertEqual(junk_result(evidence,[20,20])['status'],'needs_review')
+        result=junk_result({**evidence,'review_attempts':2},[20,20])
+        self.assertEqual(result['status'],'analyzed')
+        self.assertFalse(result['candidate'])
+        self.assertEqual(result['nomination_reason'],'user_keep_unreadable_original')
+        self.assertEqual(junk_result({**evidence,'visibility':'readable','review_attempts':2},[20,20])['status'],'needs_review')
+
     def test_truncated_response_retries_once(self):
         bad={'choices':[{'finish_reason':'length','message':{'content':'{"observation":'}}]}
         good={'choices':[{'finish_reason':'stop','message':{'content':json.dumps({
