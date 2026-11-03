@@ -20,14 +20,15 @@ class CoreTests(unittest.TestCase):
         with Image.open(io.BytesIO(base64.b64decode(url.split(',',1)[1]))) as image:
             self.assertEqual(image.size,(1536,1536))
 
-    def test_unreadable_keep_requires_completed_recheck(self):
+    def test_unreadable_review_requires_completed_recheck(self):
         evidence={'category':'uncertain','observation':'Original is black and blurred',
                   'evidence_type':'uncertain','visibility':'unreadable'}
         self.assertEqual(junk_result(evidence,[20,20])['status'],'needs_review')
         result=junk_result({**evidence,'review_attempts':2},[20,20])
         self.assertEqual(result['status'],'analyzed')
-        self.assertFalse(result['candidate'])
-        self.assertEqual(result['nomination_reason'],'user_keep_unreadable_original')
+        self.assertTrue(result['candidate'])
+        self.assertEqual(result['category'],'unreadable_original')
+        self.assertEqual(result['nomination_reason'],'user_review_unreadable_original')
         self.assertEqual(junk_result({**evidence,'visibility':'readable','review_attempts':2},[20,20])['status'],'needs_review')
 
     def test_truncated_response_retries_once(self):

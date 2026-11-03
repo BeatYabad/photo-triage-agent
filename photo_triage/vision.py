@@ -156,16 +156,18 @@ def junk_result(evidence, dimensions, frames=1):
     # without turning this harmless label overlap into a review requirement.
     if category == 'ordinary_photo' and value['evidence_type'] not in {'none', 'personal_record'}:
         uncertain = True
-    keep_unreadable = (category == 'uncertain' and evidence.get('visibility') == 'unreadable'
+    review_unreadable = (category == 'uncertain' and evidence.get('visibility') == 'unreadable'
                        and evidence.get('review_attempts', 0) >= 2)
-    if keep_unreadable:
-        # Steve's explicit choice: retain originals unreadable after recovery checks.
+    if review_unreadable:
+        # Steve's explicit choice: send visually unreadable originals to review.
         # This is a junk-filter disposition, never an NSFW clearance.
         uncertain = False
+        candidate = True
+        category = 'unreadable_original'
     return {'status': 'needs_review' if uncertain else 'analyzed',
             'candidate': candidate, 'category': category if candidate else None,
             'dimensions': dimensions, 'frames': frames, 'contextual_evidence': evidence,
-            'nomination_reason': 'user_keep_unreadable_original' if keep_unreadable else
+            'nomination_reason': 'user_review_unreadable_original' if review_unreadable else
                                  'full_image_category_evidence' if candidate else 'no_supported_junk',
             'holds': ['junk_context_uncertain'] if uncertain else
                      ['visual_review_required'] if candidate else []}

@@ -140,7 +140,8 @@ request deadline, with a larger token budget. Persistent errors remain explicit.
 A second uncertain result is never
 converted into an unsupported junk nomination. Images stay in request memory.
 EXIF orientation is applied before inspection. Per Steve's November 2 choice,
-originals still visually unreadable after the second check stay in the gallery
-with the explicit `user_keep_unreadable_original` junk disposition. Recognizable
+originals still visually unreadable after the second check go to
+`FOR_REVIEW/Unreadable` with the explicit `user_review_unreadable_original` disposition.
+This supersedes his earlier keep-in-gallery choice. Recognizable
 but ambiguous scenes still require resolution. This does not exempt NSFW checks.
 

@@ -32,5 +32,7 @@
   "privacy_storage.py": "1b7ee66c2bdd24a17ac3719cf5eafca4778f454804b7c9257892be48e7fa7100",
   "file_deadline.py": "9c6b63af70a9c463484fdb093296915e18ab30fb0366131b810bb5e60711fe21",
   "video_decode_slot.py": "7fc020ac2a4a60b90888aec533cb02e9522bbab17a52005ea9f925e4898b5837",
-  "video_decode.py": "c5f9984fd3a0cc322d96d939097c0bb949068e0aa9867ed4f7f7b5a061207e80"
+  "video_decode.py": "c5f9984fd3a0cc322d96d939097c0bb949068e0aa9867ed4f7f7b5a061207e80",
+  "review_categories.py": "77ad515b60e4fa1ca8ba98fdd03d4bbe0278dc29e8ac2716ca072230f085cc43",
+  "move_unreadable_review.py": "558f3e80c952c89fc24dbd631e72b01c341584de7e86903f76a19db80e4bb0de"
 }
