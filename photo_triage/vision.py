@@ -2,6 +2,7 @@
 import base64
 import io
 import json
+import time
 import urllib.request
 import urllib.parse
 
@@ -71,7 +72,7 @@ class VisionProvider:
         data = io.BytesIO()
         im.save(data, format='PNG')
         schema = {'type': 'object', 'properties': {
-            'observation': {'type': 'string'},
+            'observation': {'type': 'string', 'maxLength': 400},
             'evidence_type': {'type': 'string', 'enum': sorted(EVIDENCE_TYPES)},
             'category': {'type': 'string', 'enum': sorted(CATEGORIES)}},
             'required': ['observation', 'evidence_type', 'category'], 'additionalProperties': False}
@@ -91,14 +92,27 @@ class VisionProvider:
                    'response_format': {'type': 'json_schema', 'json_schema': {
                        'name': 'triage', 'strict': True, 'schema': schema}}}
         try:
-            request = urllib.request.Request(self.endpoint, data=json.dumps(payload).encode(),
-                                             headers={'Content-Type': 'application/json'})
-            with urllib.request.urlopen(request, timeout=self.timeout) as response:
-                result = json.load(response)
-            choice = result['choices'][0]
-            if choice.get('finish_reason') == 'length':
-                raise ValueError('Triage response truncated before classification completed')
-            value = validate(json.loads(choice['message']['content']))
+            deadline = time.monotonic() + self.timeout
+            for attempt in range(2):
+                request = urllib.request.Request(self.endpoint, data=json.dumps(payload).encode(),
+                                                 headers={'Content-Type': 'application/json'})
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    raise TimeoutError('Triage response recovery exceeded its time budget')
+                with urllib.request.urlopen(request, timeout=remaining) as response:
+                    result = json.load(response)
+                try:
+                    choice = result['choices'][0]
+                    if choice.get('finish_reason') == 'length':
+                        raise ValueError('Triage response truncated before classification completed')
+                    value = validate(json.loads(choice['message']['content']))
+                    break
+                except (ValueError, KeyError, IndexError):
+                    if attempt or deadline-time.monotonic() <= 1:
+                        raise
+                    # One bounded formatting retry; network errors are not retried here.
+                    time.sleep(1)
+                    payload['max_tokens'] = 1024
             self.failures = 0
             return {**value, 'model': self.model, 'source': 'photo_triage_agent',
                     'scope': 'whole_image_resized_without_crop'}

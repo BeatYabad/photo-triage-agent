@@ -1,4 +1,6 @@
 import unittest
+import io
+import json
 from unittest.mock import patch
 from PIL import Image, ImageDraw
 from photo_triage.batch import batches, process_batches
@@ -7,6 +9,15 @@ from photo_triage.vision import VisionProvider, junk_result, validate
 
 
 class CoreTests(unittest.TestCase):
+    def test_truncated_response_retries_once(self):
+        bad={'choices':[{'finish_reason':'length','message':{'content':'{"observation":'}}]}
+        good={'choices':[{'finish_reason':'stop','message':{'content':json.dumps({
+            'category':'ordinary_photo','observation':'Conference audience','evidence_type':'none'})}}]}
+        with patch('urllib.request.urlopen',side_effect=[io.BytesIO(json.dumps(v).encode()) for v in (bad,good)]) as request, patch('photo_triage.vision.time.sleep'):
+            result=VisionProvider().inspect(Image.new('RGB',(20,20)))
+        self.assertEqual(result['category'],'ordinary_photo')
+        self.assertEqual(request.call_count,2)
+
     def test_uncertain_gets_full_scene_recheck(self):
         first={'category':'uncertain','observation':'Presentation screen','evidence_type':'uncertain'}
         second={'category':'ordinary_photo','observation':'Audience in conference room','evidence_type':'none'}

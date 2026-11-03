@@ -135,6 +135,8 @@ Ambiguous junk classifications receive one additional full-scene check at up to
 1920 pixels, with guidance distinguishing photographed screens and reference
 photos from screenshots. Both observations are retained. Clear results use one
 inference. The response budget is 512 tokens with concise observations, and
-truncated responses are reported explicitly. A second uncertain result is never
+malformed or truncated model output gets one formatting retry within the same
+request deadline, with a larger token budget. Persistent errors remain explicit.
+A second uncertain result is never
 converted into an unsupported junk nomination. Images stay in request memory.
 
