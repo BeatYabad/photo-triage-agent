@@ -43,5 +43,6 @@
   "folder_ingest.py": "cd382863a4e8f1e19dedb113f2b415ca72febd6a987c527ec1f76b3b146739be",
   "test_folder_ingest.py": "9d60992fd7991ba66646695a250106fc3f7cbdb040a51de1497caf1f5534ad35",
   "repair_review_moves.py": "b3a150e3d7bcdbd6bd5084dbf0f2425c7bb1e5627d37f93296ba5c07e707812d",
-  "test_repair_review_moves.py": "348a84605baa0a419035d16abf8f66e8389b66f29d3832b79391add196f59f09"
+  "test_repair_review_moves.py": "348a84605baa0a419035d16abf8f66e8389b66f29d3832b79391add196f59f09",
+  "continue_blocker_repair.ps1": "c03b7c49343c96db62cd44ad7042e826ea2820b6f040969465fae2e115685263"
 }

@@ -155,3 +155,8 @@ Review grouping separates native Live Photos from standalone stills with identic
 image bytes. `repair_review_moves.py --run RUN --apply` retries that run's blocked
 and returned review files only after fresh exact-content verification. It records
 changed/unavailable files separately and never reuses their old nominations.
+
+`continue_blocker_repair.ps1` serializes an explicitly requested repair: it waits
+up to two hours for the supplied repair process, requires its finished report,
+then runs review repair once. It does not start a fresh gallery scan or bypass
+Apple authentication, Vault unlocking, or unresolved native asset requirements.
